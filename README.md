@@ -1,4 +1,4 @@
-# ThreeJS-Particles
+# Three.js-Particles
 Rendering particles ✨ in Three.js
 
 - Getting a particle's lifetime is tricky in Three.js, but it's essential for effects like fade-out, scale-in, etc.
