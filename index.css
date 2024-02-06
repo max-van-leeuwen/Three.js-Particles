@@ -1,0 +1,23 @@
+body {
+  background-color: rgb(113, 0, 205);
+  overflow: hidden;
+}
+
+html, body {touch-action: none;}
+
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#threejs-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
