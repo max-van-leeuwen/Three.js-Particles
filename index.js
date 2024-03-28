@@ -17,7 +17,7 @@ import sparkles from './sparkles.png'; // texture
 
 
 
-function startThreeJSScene(){
+function startScene(){
     // get mobile device
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isMobileDevice = /android/i.test(userAgent) || /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
@@ -313,7 +313,4 @@ void main() {
 
 
 
-// arbitrary delay to help with booting up
-window.onload = function(){
-  setTimeout(startThreeJSScene, 100);
-};
+startScene();
