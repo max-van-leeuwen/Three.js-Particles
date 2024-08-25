@@ -1,15 +1,14 @@
 // Max van Leeuwen
-// twitter.com/maksvanleeuwen
-// links.maxvanleeuwen.com
+//  twitter.com/maksvanleeuwen
+//  links.maxvanleeuwen.com
 //
 // ✨ Renders a trail of particles on touch or mouse hover ✨
 
 
 
 // parameters
-const particleCount = 190; // maximum simultaneous particle count before cycling
-const spawnInterval = 5; // spawn a new particle once every this many ms (if frames are skipped, positions will be interpolated for a smooth particle trail!)
-// -
+const maxParticleCount = 190; // maximum simultaneous particle count before cycling
+const particleSpawnIntervalMS = 5; // spawn a new particle once every this many ms (if frames are skipped, positions will be interpolated for a smooth particle trail!)
 
 
 import * as THREE from 'three';
@@ -18,11 +17,11 @@ import sparkles from './sparkles.png'; // texture
 
 
 function startScene(){
-    // get mobile device
+    // check if mobile device
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isMobileDevice = /android/i.test(userAgent) || /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 
-    // get window size
+    // get initial window size to dynamically update scene on resize
     const displaySizes = {
         width: window.innerWidth,
         height: window.innerHeight,
@@ -37,7 +36,7 @@ function startScene(){
     scene.background = new THREE.Color("rgb(113, 0, 205)");
     container.appendChild(renderer.domElement);
 
-    // set window size dynamically
+    // change camera and renderer size dynamically when window is resized
     function updateWindowResize(){
         // get sizes
         displaySizes.width = window.innerWidth;
@@ -57,18 +56,14 @@ function startScene(){
     const particlesGeometry = new THREE.BufferGeometry();
 
     // position attribute (placeholder)
-    const positions = new Float32Array(particleCount * 3);
-
-    // random size attribute
-    const sizes = new Float32Array(particleCount);
-    for(let i = 0; i < particleCount; i++){
-        sizes[i] = (Math.pow(Math.random(), 2)/2 + .5); // initialized with random sizes for variation, [.5-1] with bias towards smaller for a more organic look
-    }
+    const positions = new Float32Array(maxParticleCount * 3);
+    const sizes = new Float32Array(maxParticleCount);
+    const startTimes = new Float32Array(maxParticleCount);
 
     // spawn-time attribute (placeholder)
-    const startTimes = new Float32Array(particleCount);
-    for(let i = 0; i < particleCount; i++){
-        startTimes[i] = -1; // will be overwritten each time this particle is cycled through
+    for(let i = 0; i < maxParticleCount; i++){
+        sizes[i] = (Math.pow(Math.random(), 2)/2 + .5); // initialized with random sizes for variation, ranging 0.5-1, with bias towards smaller for a nicer look
+        startTimes[i] = -1; // -1 means unused particle, this will be overwritten each time this particle is cycled through
     }
 
     // apply attributes to particle geo
@@ -97,9 +92,9 @@ float remap(float value, float minSrc, float maxSrc, float minDst, float maxDst)
 }
 
 float cubicInOut(float t){ // convert 0-1 linear to cubic (in/out)
-    if (t < .5) {
+    if(t < .5){
         return 4. * t * t * t;
-    } else {
+    }else{
         float f = ((2. * t) - 2.);
         return .5 * f * f * f + 1.;
     }
@@ -121,7 +116,7 @@ const float inTime = .18; // particle scale-in animation duration
 const float horizontalAmount = .35; // flying away from cursor horizontally
 const float particleScale = 300.; // overall particle scale
 
-void main() {
+void main(){
     float lifeTime = random(startTime+10.)/2. + .5; // random lifetime between 0.5-1
     float t = startTime < 0. ? 0. : currentTime-startTime;
 
@@ -144,7 +139,7 @@ void main() {
 uniform sampler2D tex;
 varying float vColor; // get fluctuating brightness amount
 
-void main() {
+void main(){
     gl_FragColor = texture2D(tex, gl_PointCoord); // get texture color
     gl_FragColor.rgb *= pow(vColor, 6.)*1.2 + 1.; // apply fluctuating brightness to texture
 }
@@ -158,23 +153,23 @@ void main() {
 
 
 
-    // cycling particles
-    let currentParticle = 0; // current particle index
+    // place the next particle in the cycle at a position with specific startTime
+    let crrParticleIndex = 0; // current particle index
     function addParticle(x, y, z, startTime){
         // position
-        positions[currentParticle * 3] = x;
-        positions[currentParticle * 3 + 1] = y;
-        positions[currentParticle * 3 + 2] = z;
+        positions[crrParticleIndex * 3] = x;
+        positions[crrParticleIndex * 3 + 1] = y;
+        positions[crrParticleIndex * 3 + 2] = z;
         particlesGeometry.attributes.position.needsUpdate = true;
 
         // start time initialize
-        startTimes[currentParticle] = startTime;
+        startTimes[crrParticleIndex] = startTime;
         particlesGeometry.attributes.startTime.needsUpdate = true;
 
         // cycle index (if exceeding maximum index, go back to 0 and reuse earlier first particle)
-        currentParticle++;
-        if(currentParticle >= particleCount){
-            currentParticle = 0;
+        crrParticleIndex++;
+        if(crrParticleIndex >= maxParticleCount){
+            crrParticleIndex = 0;
         }
     }
 
@@ -182,15 +177,16 @@ void main() {
 
     // interactions
     let lastMouseMoveEvent;
-    let prvP; // store previous spawn position
+    let prvPos; // store previous spawn position
     function requestParticles(event, resetParticleSpawnCounter){
         lastMouseMoveEvent = event; // register mouse moved (to keep spawning when mouse not moving)
 
-        // check how many new particles should be spawned
-        const particleCount = particlesToSpawn(resetParticleSpawnCounter);
-        if(particleCount == 0) return;
+        // check how many new particles should be spawned on this frame
+        const maxParticleCount = particlesToSpawn(resetParticleSpawnCounter);
+        if(maxParticleCount == 0) return;
 
-        if(!isCursorInside) return;
+        // don't spawn particles if not inside of the canvas
+        if(!isCursorInWindow || isCursorHoveringOverButton) return;
 
         // get on-screen spawn position
         const x = (event.clientX / displaySizes.width) * 2 - 1;
@@ -204,18 +200,18 @@ void main() {
         const pos = camera.position.clone().add(dir.multiplyScalar(distance)); // world position
 
         // spawn particles
-        const currentTime = getCurrentTime();
-        for(let i = 0; i < particleCount; i++){
-            const ratio = (i+1)/particleCount; // (0-1]
+        const currentTime = getElapsedTime();
+        for(let i = 0; i < maxParticleCount; i++){
+            const ratio = (i+1)/maxParticleCount; // (0-1]
             let p = pos;
-            if(prvP){ // interpolate with previous frame's position for a continuous streak
-                p = prvP.clone().lerp(p, ratio); // overwrite with lerped
+            if(prvPos){ // interpolate with previous frame's position for a continuous streak
+                p = prvPos.clone().lerp(p, ratio); // overwrite with lerped
             }
             addParticle(p.x, p.y, p.z, currentTime + ratio*.001); // draw new particle, give it a slight 'currentTime' offset to make sure each particle is unique even when created on the same frame
         }
 
         // store as previous spawn position to interpolate on next frame
-        prvP = new THREE.Vector3(pos.x, pos.y, pos.z);
+        prvPos = new THREE.Vector3(pos.x, pos.y, pos.z);
     }
 
 
@@ -226,23 +222,23 @@ void main() {
         if(isFirstMove) isFirstMove = false;
     }
 
-    let touchActive;
+    let activeTouchEvent;
     function onTouchStart(event){ // on touch start and move
-        prvP = null; // deregister interpolation history
+        prvPos = null; // deregister interpolation history
         const touch = event.touches[0];
-        touchActive = touch; // register touch is active (to keep spawning even when not moving)
+        activeTouchEvent = touch; // register touch is active (to keep spawning even when not moving)
         requestParticles(touch, true);
     }
 
     function onTouchMove(event){ // on touch start and move
         const touch = event.touches[0];
-        touchActive = touch; // register touch is active (to keep spawning even when not moving)
+        activeTouchEvent = touch; // register touch is active (to keep spawning even when not moving)
         requestParticles(touch);
     }
 
     function touchEnd(){
-        touchActive = null; // deregister active touch (stop spawning)
-        prvP = null; // deregister interpolation history
+        activeTouchEvent = null; // deregister active touch (stop spawning)
+        prvPos = null; // deregister interpolation history
     }
 
     // event listeners
@@ -254,20 +250,30 @@ void main() {
 
 
     // no particles if cursor is outdside of window
-    let isCursorInside = true;
+    let isCursorInWindow = true;
     document.addEventListener('mouseleave', () => {
-        isCursorInside = false;
-        prvP = null; // deregister interpolation history
+        isCursorInWindow = false;
+        prvPos = null; // deregister interpolation history
     });
     document.addEventListener('mouseenter', () => {
-        isCursorInside = true;
+        isCursorInWindow = true;
     });
+
+    // no particles if cursor in hovering over the button
+    var isCursorHoveringOverButton = false;
+    var buttons = document.querySelector('.link-btn');
+    buttons.addEventListener('mouseenter', (event) => {
+        isCursorHoveringOverButton = true;
+    }, true); // 'true' makes sure the event is captured in the capturing phase
+    buttons.addEventListener('mouseleave', (event) => {
+        isCursorHoveringOverButton = false;
+    }, true);
 
 
 
     // get the current time
     const startTime = Date.now()/1000; // current clock time in seconds
-    function getCurrentTime(){ // time since page load in seconds
+    function getElapsedTime(){ // time since page load in seconds
         return Date.now()/1000 - startTime;
     }
 
@@ -280,7 +286,7 @@ void main() {
         // get amount of particles that should have spawned during the duration of this frame
         const currentTime = Date.now();
         if(resetParticleSpawnCounter) prvTime = currentTime;
-        const thisFrameCount = (currentTime - prvTime) / spawnInterval;
+        const thisFrameCount = (currentTime - prvTime) / particleSpawnIntervalMS;
         prvTime = currentTime;
 
         // add to previous frame (there might be leftover)
@@ -300,17 +306,14 @@ void main() {
         requestAnimationFrame(animate);
 
         // particles material needs the current time for comparison
-        particlesMaterial.uniforms['currentTime'].value = getCurrentTime(); // seconds since page load
+        particlesMaterial.uniforms['currentTime'].value = getElapsedTime(); // seconds since page load
 
         // on touch & hold
-        if(touchActive) requestParticles(touchActive);
+        if(activeTouchEvent) requestParticles(activeTouchEvent);
         if(!isMobileDevice && lastMouseMoveEvent) requestParticles(lastMouseMoveEvent);
 
         renderer.render(scene, camera);
     };
     animate();
 }
-
-
-
 startScene();

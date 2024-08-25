@@ -5,6 +5,7 @@ body {
 
 html, body {touch-action: none;}
 
+/* disable selection to user can freely draw with touch or drag with a cursor */
 * {
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -12,6 +13,7 @@ html, body {touch-action: none;}
   user-select: none;
 }
 
+/* threejs full screen */
 #threejs-container {
   position: fixed;
   top: 0;

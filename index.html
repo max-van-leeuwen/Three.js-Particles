@@ -4,17 +4,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  
+
+<link rel="icon" type="image/x-icon" href="favicon.ico">
 <link href="./index.css" rel="stylesheet">
 <script src="./index.js" type="module"></script>
 
 
+<!-- some page initialization, e.g. prevent zooming -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="HandheldFriendly" content="true" />
 
+
+<!-- button -->
+<style>
+    .link-btn {
+    color: rgb(113, 0, 205);
+    background-color: rgb(0, 255, 242);
+    padding: 11px 20px;
+    margin: 19px 0;
+    display: block;
+    border: 2px solid black;
+    border-radius: 10px;
+    text-shadow: none;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.17s ease-in-out;
+    box-shadow: 9px 9px 0px rgba(0, 0, 0, 1);
+    will-change: transform, box-shadow;
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000;
+  }
+  .link-btn:hover {
+    transform: translateY(5px) translateX(5px);
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+  }
+</style>
+
+
+<!-- main page -->
 <title>✨</title>
   <body>
     <div id="threejs-container"></div>
   </body>
+
+  <a href="https://github.com/max-van-leeuwen/Three.js-Particles" target="_blank" class="link-btn">
+    <i class="fa-brands fa-github"></i>github
+  </a>
 </html>
