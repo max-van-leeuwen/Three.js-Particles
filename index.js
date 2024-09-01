@@ -112,17 +112,18 @@ float centerRemap(float v, float center){ // linear 0-1 to lin 0-1-0, with arbit
     }
 }
 
-const float inTime = .18; // particle scale-in animation duration
+const float inTime = .18; // particle scale-in animation duration (0-1)
 const float horizontalAmount = .35; // flying away from cursor horizontally
 const float particleScale = 300.; // overall particle scale
 
 void main(){
     float lifeTime = random(startTime+10.)/2. + .5; // random lifetime between 0.5-1
-    float t = startTime < 0. ? 0. : currentTime-startTime;
+    float t = startTime < 0. ? 0. : currentTime-startTime; // 0-1
 
     float horDirection = remap(random(startTime+20.), 0., 1., -horizontalAmount, horizontalAmount); // random horizontal direction on spawn
-    float horMultiplier = 1. - pow(1. - (t / (lifeTime*.7) ), 2.); // imitating a horizontal force by using the particle's age to multiply horDirection with
-    vec4 mvPosition = modelViewMatrix * vec4(position+vec3(horDirection * horMultiplier, -t*t*.4  -t*.3, 0.), 1.0); // x is horizontal force, y is falling down
+    float horMultiplier = 1. - pow(1. - (t / (lifeTime*.7) ), 3.); // imitating a horizontal force by using the particle's age to multiply horDirection with
+    float unititializedOffset = t==0.?9999.:0.; // a scale of 0 is still visible as a tiny dot (floating point precision error), so this is an extra measure, pushing the particle out of view when it shouldn't be visible
+    vec4 mvPosition = modelViewMatrix * vec4(position+vec3(horDirection * horMultiplier + unititializedOffset, -t*t*.4  -t*.3, 0.), 1.0); // x is horizontal force, y is falling down
     gl_Position = projectionMatrix * mvPosition;
 
     float fluctuatingSize = sin(t*10. + random(startTime+30.)*6.)/4.+.75; // a fluctuating scale between .5-1
