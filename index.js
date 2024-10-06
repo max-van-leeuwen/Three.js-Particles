@@ -45,6 +45,7 @@ function startScene(){
         // apply
         camera.aspect = displaySizes.width / displaySizes.height;
         camera.updateProjectionMatrix();
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(displaySizes.width, displaySizes.height);
     }
     window.addEventListener('resize', updateWindowResize);
