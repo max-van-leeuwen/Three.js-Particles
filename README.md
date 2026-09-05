@@ -1,3 +1,5 @@
+## If you like Three.js particles, check out my more recent project [Sparkle Mouse](https://github.com/max-van-leeuwen/sparkle-mouse)!
+
 # Three.js-Particles
 ✨ Rendering particles in Three.js ✨
 
